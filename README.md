@@ -1,99 +1,290 @@
-[![](https://img.shields.io/codacy/grade/6a8e207cf98246169e633d6f22da9d9c)](https://hub.docker.com/r/sonroyaalmerol/steamcmd-arm64/) [![Docker Pulls](https://img.shields.io/docker/pulls/sonroyaalmerol/steamcmd-arm64.svg)](https://hub.docker.com/r/sonroyaalmerol/steamcmd-arm64/) [![](https://img.shields.io/docker/image-size/sonroyaalmerol/steamcmd-arm64)](https://img.shields.io/docker/image-size/sonroyaalmerol/steamcmd-arm64) [![Bookworm Images](https://github.com/sonroyaalmerol/steamcmd-arm64/actions/workflows/release.yml/badge.svg)](https://github.com/sonroyaalmerol/steamcmd-arm64/actions/workflows/release.yml)
+# Soulmask Dedicated Server on ARM64 with Box64
 
-> [!IMPORTANT]
-> QEMU user static binaries has been removed from the image from the 2024-07-07 tag and onwards. See issue [#7](https://github.com/sonroyaalmerol/steamcmd-arm64/issues/7). For those with hosts incompatible with 32-bit binaries (like Box86), please see [sonroyaalmerol/steam-depot-downloader](https://github.com/sonroyaalmerol/steam-depot-downloader) as an alternative.
+This Docker setup allows you to run a Soulmask dedicated server on ARM64 platforms (like Raspberry Pi, Apple Silicon, etc.) using Box64 for x86_64 emulation.
 
-> [!IMPORTANT]  
-> `bullseye` builds have been deprecated. Old images will be available but will not be updated going forward.
+## Supported Platforms
 
-# Supported tags and respective `Dockerfile` links
-  -	[`steam`, `steam-bookworm`, `latest` (*bookworm/Dockerfile*)](https://github.com/sonroyaalmerol/steamcmd-arm64/blob/master/bookworm/Dockerfile)
-  -	[`root`, `root-bookworm` (*bookworm/Dockerfile*)](https://github.com/sonroyaalmerol/steamcmd-arm64/blob/master/bookworm/Dockerfile)
-  -	~~`steam-bullseye`, `bullseye` (*bullseye/Dockerfile*)~~
-  -	~~`root-bullseye` (*bullseye/Dockerfile*)~~
+- **Apple Silicon (M1/M2/M3)** - Uses optimized Box64 build
+- **Raspberry Pi 5** - Supports both 4K and 16K page sizes
+- **Raspberry Pi 4** - Includes legacy 0.2.7 version support
+- **Raspberry Pi 3** - Basic ARM64 support
+- **RK3588** - Rockchip ARM64 processors
+- **Adlink** - Custom compiled version
+- **Generic ARM64** - Fallback for other platforms
 
-> [!IMPORTANT]
-> New versions of the Docker image are built once a week to keep up with Box86 and Box64 updates. The rest of the installed packages are version pinned to ensure stability. Use a specific tag with a date if you want to pin a specific release.
+## Prerequisites
 
-# What is SteamCMD?
-The Steam Console Client or SteamCMD is a command-line version of the Steam client. Its primary use is to install and update various dedicated servers available on Steam using a command-line interface. It works with games that use the SteamPipe content system. All games have been migrated from the deprecated HLDSUpdateTool to SteamCMD. This image can be used as a base image for Steam-based dedicated servers (Source: [developer.valvesoftware.com](https://developer.valvesoftware.com/wiki/SteamCMD)).
+- Docker and Docker Compose installed
+- ARM64 architecture system
+- At least 4GB of RAM (8GB+ recommended)
+- 10GB+ free disk space for the game files
 
-# What makes this compatible with ARM64?
-This image has [Box64](https://github.com/ptitSeb/box64) and [Box86](https://github.com/ptitSeb/box86) integrated. By default, SteamCMD will be using Box86 when running via the steamcmd.sh shell script. Box86 is needed as SteamCMD itself a 32-bit binary application. For 64-bit server binaries, please use Box64 `/usr/local/bin/box64`. For tweaking, environment variables could be used for both [Box64](https://github.com/ptitSeb/box64/blob/main/docs/USAGE.md) and [Box86](https://github.com/ptitSeb/box86/blob/master/docs/USAGE.md).
+## Quick Start
 
-# How to use this image
-> [!IMPORTANT]
-> Images are hosted in ghcr.io (ghcr.io/sonroyaalmerol/steamcmd-arm64) and Docker Hub (sonroyaalmerol/steamcmd-arm64).
+1. **Clone or download the files:**
+   ```bash
+   mkdir soulmask-server
+   cd soulmask-server
+   ```
 
-Whilst it's recommended to use this image as a base image of other game servers, you can also run it in an interactive shell using the following command:
-```console
-$ docker run -it --name=steamcmd ghcr.io/sonroyaalmerol/steamcmd-arm64 bash
-$ ./steamcmd.sh +force_install_dir /home/steam/squad-dedicated +login anonymous +app_update 403240 +quit
-```
-This can prove useful if you are just looking to test a certain game server installation.
+2. **Place the required files:**
+   - `Dockerfile` - Main Docker build file
+   - `box64.sh` - Box64 wrapper script
+   - `docker-compose.yml` - Docker Compose configuration
 
-Running with named volumes:
-```console
-$ docker volume create steamcmd_login_volume # Optional: Location of login session
-$ docker volume create steamcmd_volume # Optional: Location of SteamCMD installation
+3. **Build and start the server:**
+   ```bash
+   docker-compose up -d --build
+   ```
 
-$ docker run -it \
-    -v "steamcmd_login_volume:/home/steam/Steam" \
-    -v "steamcmd_volume:/home/steam/steamcmd" \
-    ghcr.io/sonroyaalmerol/steamcmd-arm64 bash
-```
-This setup is necessary if you have to download a non-anonymous appID or upload a steampipe build. For an example check out:
-https://hub.docker.com/r/cm2network/steampipe/
+4. **Monitor the server:**
+   ```bash
+   docker-compose logs -f soulmask-server
+   ```
 
 ## Configuration
-This image includes the `nano` text editor for convenience.
 
-The `steamcmd.sh` can be found in the following directory: `/home/steam/steamcmd`
+### Server Settings
 
-For better Box64 compatibility, some dedicated servers need specific configurations for stability. The combination listed below might give you the best chance in exchange for performance. You may adjust them as needed. No custom Box64 configurations have been set for this image by default. See [Box64 usage documentation](https://github.com/ptitSeb/box64/blob/main/docs/USAGE.md) for more info.
+The server configuration files are located in:
+- `./soulmask-config/LinuxServer/Game.ini` - Game settings
+- `./soulmask-config/LinuxServer/Engine.ini` - Engine settings
 
+### Default Settings
+
+- **Server Name:** Soulmask Dedicated Server
+- **Max Players:** 20
+- **Game Port:** 7777 (UDP)
+- **Query Port:** 27015 (UDP)
+- **RCON Port:** 27020 (TCP)
+- **PVP:** Disabled by default
+
+### Customizing Server Settings
+
+Edit the configuration files before starting the server:
+
+```bash
+# Edit game settings
+nano ./soulmask-config/LinuxServer/Game.ini
+
+# Edit engine settings
+nano ./soulmask-config/LinuxServer/Engine.ini
 ```
-# Set these as env variables within the container
-export BOX64_DYNAREC_BIGBLOCK=0
-export BOX64_DYNAREC_SAFEFLAGS=2
-export BOX64_DYNAREC_STRONGMEM=3
-export BOX64_DYNAREC_FASTROUND=0
-export BOX64_DYNAREC_FASTNAN=0
-export BOX64_DYNAREC_X87DOUBLE=1
+
+Key settings in `Game.ini`:
+```ini
+[/Script/SoulMask.SMGameMode]
+ServerName=Your Server Name
+ServerPassword=YourPassword
+MaxPlayers=20
+EnablePVP=false
+ServerPort=7777
 ```
 
-## Box64 Builds
+## Usage Commands
 
-This image currently includes the following Box64 build variants for the following devices:
+### Using Docker Compose (Recommended)
 
- - Generic [`generic`]
- - Raspberry Pi 3 [`rpi3`]
- - Raspberry Pi 4 [`rpi4`]
- - Raspberry Pi 4 (pre-v0.3 Box64 build) [`rpi4-pre3`]
- - Raspberry Pi 5 (4k page size) [`rpi5`]
- - Raspberry Pi 5 (16k page size) [`rpi5-16k`]
- - Orange Pi 5 (RK3588) [`rk3588`]
- - M1 (M-Series) Mac [`m1`]
- - ADLink Ampere Altra (Oracle ARM CPUs) [`adlink`]
+```bash
+# Start the server
+docker-compose up -d
 
-You may specify which variant to use with the `ARM64_DEVICE` environment variable. `generic` variant will be used by default.
+# Stop the server
+docker-compose down
 
-For more build variants, please create a new issue with your reasoning.
+# View logs
+docker-compose logs -f soulmask-server
 
-## Examples
-Images utilizing this base image:
+# Restart the server
+docker-compose restart soulmask-server
 
-| Image  | Pulls |
-| ------------- | ------------- |
-| [thijsvanloef/palworld-server-docker](https://hub.docker.com/r/thijsvanloef/palworld-server-docker) | [![Docker Pulls](https://img.shields.io/docker/pulls/thijsvanloef/palworld-server-docker.svg)](https://hub.docker.com/r/thijsvanloef/palworld-server-docker/) |
+# Update and restart
+docker-compose down
+docker-compose up -d --build
+```
 
-# Image Variants
-The `steamcmd` images come in two flavors, each designed for a specific use case.
+### Using Docker Directly
 
-## `steamcmd-arm64:latest`
-This is the defacto image. If you are unsure about what your needs are, you probably want to use this one. It is designed to be used as the base to build other images off of. This image's default user is `steam`, any command executed in a higher layer `Dockerfile` will therefor be executed as that user.<br/>
+```bash
+# Build the image
+docker build -t soulmask-server .
 
-## `steamcmd-arm64:root`
-This is a specialized image. This image's default user is `root`. If you need to install additional packages for you game server and do not want to create excess layers, then this is the right choice.
+# Run the server
+docker run -d \
+  --name soulmask-server \
+  -p 7777:7777/udp \
+  -p 27015:27015/udp \
+  -p 27020:27020/tcp \
+  -v $(pwd)/soulmask-data:/home/steam/soulmask/WS/Saved \
+  soulmask-server
 
-_Note: Running the `steamcmd.sh` as `root` will fail because the owner is the user `steam`, either swap the active user using `su steam` or use chown to change the ownership of the directory._
+# Update the server
+docker exec soulmask-server /entrypoint.sh update-soulmask
+
+# Access SteamCMD
+docker exec -it soulmask-server /entrypoint.sh steamcmd
+
+# Access shell
+docker exec -it soulmask-server /entrypoint.sh bash
+```
+
+## Server Management
+
+### Updating the Server
+
+```bash
+# Using Docker Compose
+docker-compose exec soulmask-server /entrypoint.sh update-soulmask
+
+# Or rebuild the container
+docker-compose down
+docker-compose up -d --build
+```
+
+### Backup Server Data
+
+```bash
+# Create backup
+tar -czf soulmask-backup-$(date +%Y%m%d).tar.gz soulmask-data/
+
+# Restore backup
+tar -xzf soulmask-backup-YYYYMMDD.tar.gz
+```
+
+### View Server Status
+
+```bash
+# Check if server is running
+docker-compose ps
+
+# View resource usage
+docker stats soulmask-dedicated-server
+
+# Check server logs
+docker-compose logs --tail=100 soulmask-server
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Server won't start:**
+   - Check available memory (4GB+ required)
+   - Verify ports are not in use
+   - Check Docker logs for errors
+
+2. **Poor performance:**
+   - Increase Docker memory limits
+   - Ensure sufficient CPU cores
+   - Check Box64 optimization settings
+
+3. **Connection issues:**
+   - Verify firewall ports are open
+   - Check Docker port mappings
+   - Ensure correct IP address
+
+### Performance Tuning
+
+For better performance on specific platforms:
+
+**Raspberry Pi 4:**
+```bash
+# Reduce memory usage
+echo 'gpu_mem=16' >> /boot/config.txt
+
+# Increase swap if needed
+sudo dphys-swapfile swapoff
+sudo sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
+sudo dphys-swapfile setup
+sudo dphys-swapfile swapon
+```
+
+**Apple Silicon:**
+```bash
+# Ensure Rosetta 2 is not interfering
+export BOX64_DYNAREC_STRONGMEM=1
+```
+
+### Debug Mode
+
+To enable debug logging:
+
+```bash
+# Edit docker-compose.yml and add:
+environment:
+  - BOX64_LOG=1
+  - BOX64_SHOWSEGV=1
+```
+
+### Log Files
+
+- **Server logs:** `./soulmask-logs/soulmask.out.log`
+- **Error logs:** `./soulmask-logs/soulmask.err.log`
+- **Game logs:** `./soulmask-data/Logs/`
+
+## Network Configuration
+
+### Port Forwarding
+
+If running behind a router, forward these ports:
+- **7777/UDP** - Game traffic
+- **27015/UDP** - Steam query
+- **27020/TCP** - RCON (optional)
+
+### Firewall Rules
+
+```bash
+# Ubuntu/Debian
+sudo ufw allow 7777/udp
+sudo ufw allow 27015/udp
+sudo ufw allow 27020/tcp
+
+# CentOS/RHEL
+sudo firewall-cmd --permanent --add-port=7777/udp
+sudo firewall-cmd --permanent --add-port=27015/udp
+sudo firewall-cmd --permanent --add-port=27020/tcp
+sudo firewall-cmd --reload
+```
+
+## Advanced Configuration
+
+### Custom Box64 Settings
+
+Create a custom `box64.sh` with your preferred settings:
+
+```bash
+export BOX64_DYNAREC_STRONGMEM=1
+export BOX64_DYNAREC_BIGBLOCK=1
+export BOX64_DYNAREC_FORWARD=256
+export BOX64_DYNAREC_CALLRET=1
+```
+
+### Multiple Server Instances
+
+To run multiple servers, duplicate the setup with different ports:
+
+```yaml
+services:
+  soulmask-server-1:
+    # ... configuration
+    ports:
+      - "7777:7777/udp"
+      - "27015:27015/udp"
+      
+  soulmask-server-2:
+    # ... configuration
+    ports:
+      - "7778:7777/udp"
+      - "27016:27015/udp"
+```
+
+## Support
+
+For issues related to:
+- **Box64:** Check the [Box64 GitHub repository](https://github.com/ptitSeb/box64)
+- **Soulmask:** Visit the official Soulmask community forums
+- **Docker:** Consult Docker documentation
+
+## License
+
+This setup is provided as-is for educational and personal use. Soulmask is owned by CampFire Studio.

@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  soulmask-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: bookworm
+    container_name: soulmask-dedicated-server
+    restart: unless-stopped
+    
+    # Port mappings
+    ports:
+      - "7777:7777/udp"    # Game port
+      - "27015:27015/udp"  # Query port
+      - "27020:27020/tcp"  # RCON port
+    
+    # Environment variables
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      
+    # Volume mappings for persistent data
+    volumes:
+      - ./soulmask-data:/home/steam/soulmask/WS/Saved
+      - ./soulmask-logs:/var/log
+      - ./soulmask-config:/home/steam/soulmask/WS/Saved/Config
+    
+    # Resource limits (adjust based on your hardware)
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "WSServer-Linux-Shipping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
